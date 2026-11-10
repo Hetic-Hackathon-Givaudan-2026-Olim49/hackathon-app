@@ -25,6 +25,7 @@ Depuis le Dev Container :
 L'agent assiste l'équipe Hackathon Five dans le développement du projet.
 
 Avant de modifier le code :
+
 - identifier le ticket GitHub concerné ;
 - consulter les ADR dans `docs/adr/` si la modification touche l'architecture ;
 - consulter `openapi.yaml` si la modification concerne les échanges HTTP ;
@@ -37,6 +38,7 @@ L'agent ne prend pas seul une décision d'architecture importante.
 Le dépôt est un monorepo npm composé des workspaces `api` et `web`.
 
 L'environnement de développement repose sur :
+
 - Node.js pour le projet JavaScript/TypeScript ;
 - PostgreSQL 17 pour la base de données ;
 - Docker Compose ;
@@ -96,6 +98,7 @@ Avant de proposer une Pull Request, exécuter :
 `openapi.yaml` est la référence du contrat HTTP entre le front-end et l'API.
 
 Lorsqu'une modification change :
+
 - une route ;
 - une entrée ;
 - une réponse ;
@@ -120,6 +123,7 @@ Ne jamais modifier directement `db/data/`.
 Ne jamais pousser directement sur `develop` ou `main`.
 
 Pour une modification :
+
 1. partir de `develop` à jour ;
 2. créer une branche dédiée ;
 3. limiter la branche à un ticket ;
