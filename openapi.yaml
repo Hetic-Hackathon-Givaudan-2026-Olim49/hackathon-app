@@ -1,0 +1,41 @@
+openapi: 3.1.0
+
+info:
+  title: Hackathon Five API
+  version: 1.0.0
+  description: API de l'application Hackathon Five.
+
+paths:
+  /api/preparation:
+    post:
+      summary: Préparer un rendez-vous client
+      description: Génère une synthèse permettant à un commercial de préparer un rendez-vous client.
+      operationId: preparerRendezVous
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - client
+              properties:
+                client:
+                  type: string
+                  description: Identifiant ou nom du client.
+      responses:
+        '200':
+          description: Synthèse générée avec succès.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - synthese
+                properties:
+                  synthese:
+                    type: string
+        '400':
+          description: Requête invalide.
+        '500':
+          description: Erreur lors de la génération de la synthèse.
