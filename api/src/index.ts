@@ -7,7 +7,7 @@ try {
   // Pas de .env : on garde l'environnement tel quel
 }
 
-const { DATABASE_URL, AI_BASE_URL, AI_MODEL, AI_API_KEY = '' } = process.env;
+const { DATABASE_URL, DATA_API_URL } = process.env;
 
 const PORT = Number(process.env.PORT ?? 3000);
 
@@ -56,31 +56,93 @@ app.post('/api/questions', async (req, res) => {
   res.status(201).json(rows[0]);
 });
 
+type DataOpportunity = {
+  entreprise?: string;
+  type_opportunite?: string;
+  division_givaudan?: string;
+  hypothese?: string;
+  fenetre_action?: string;
+  question_client?: string;
+  confiance?: string;
+};
+
+type DataEntreprise = {
+  nom?: string;
+};
+
+type DataFiche = {
+  ce_que_ca_implique?: string;
+  entreprise?: DataEntreprise;
+  opportunite?: DataOpportunity;
+  question_a_poser?: string;
+  confiance?: string;
+};
+
+type DataResponse = {
+  mode?: string;
+  fiches?: DataFiche[];
+};
+
+function fallback(question: string): string {
+  return `[SIMULATION IA] Synthèse simulée pour la question : "${question}". L'API Data n'est pas disponible.`;
+}
+
 async function ask(question: string): Promise<string> {
-  // Fallback temporaire pour sécuriser la tranche verticale m2.
-  // La simulation reste explicitement identifiable pendant la démo.
-  if (!AI_BASE_URL) {
-    return `[SIMULATION IA] Synthèse simulée pour la question : "${question}". La connexion au service Data/IA sera branchée ensuite.`;
+  if (!DATA_API_URL) {
+    return fallback(question);
   }
 
-  const response = await fetch(`${AI_BASE_URL}/chat/completions`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${AI_API_KEY}`,
-    },
-    body: JSON.stringify({
-      model: AI_MODEL,
-      messages: [{ role: 'user', content: question }],
-    }),
-  });
+  try {
+    const response = await fetch(`${DATA_API_URL}/opportunities?dummy=true`, {
+      headers: {
+        Accept: 'application/json',
+        'ngrok-skip-browser-warning': '1',
+      },
+    });
 
-  if (!response.ok) {
-    throw new Error(`IA : ${response.status} ${await response.text()}`);
+    if (!response.ok) {
+      throw new Error(`Data API : ${response.status}`);
+    }
+
+    const data = (await response.json()) as DataResponse;
+    const fiche = data.fiches?.[0];
+
+    if (!fiche) {
+      throw new Error('Aucune opportunité retournée par la Data API');
+    }
+
+    const entreprise =
+      fiche.entreprise?.nom ??
+      fiche.opportunite?.entreprise ??
+      'Entreprise non précisée';
+
+    const implication =
+      fiche.ce_que_ca_implique ?? 'Aucune implication commerciale disponible.';
+
+    const opportunite =
+      fiche.opportunite?.hypothese ??
+      'Aucune hypothèse d’opportunité disponible.';
+
+    const questionClient =
+      fiche.question_a_poser ??
+      fiche.opportunite?.question_client ??
+      'Aucune question client proposée.';
+
+    const confiance =
+      fiche.confiance ?? fiche.opportunite?.confiance ?? 'non précisée';
+
+    return [
+      '[DATA API - MODE DUMMY]',
+      `Entreprise : ${entreprise}`,
+      `Impact : ${implication}`,
+      `Opportunité : ${opportunite}`,
+      `Question à poser au client : ${questionClient}`,
+      `Confiance : ${confiance}`,
+    ].join('\n');
+  } catch (error) {
+    console.error('API Data indisponible, utilisation du fallback :', error);
+    return fallback(question);
   }
-
-  const data = await response.json();
-  return data.choices[0].message.content;
 }
 
 app.listen(PORT, () => {
