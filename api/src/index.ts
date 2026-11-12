@@ -8,22 +8,31 @@ try {
 }
 
 const { DATABASE_URL, AI_BASE_URL, AI_MODEL, AI_API_KEY = '' } = process.env;
+
 const PORT = Number(process.env.PORT ?? 3000);
 
-const db = new pg.Pool({ connectionString: DATABASE_URL });
+const db = new pg.Pool({
+  connectionString: DATABASE_URL,
+});
+
 const app = express();
 
 app.use(express.json());
 
 app.get('/api/health', async (_req, res) => {
   const { rows } = await db.query('SELECT version()');
-  res.json({ status: 'ok', db: rows[0].version });
+
+  res.json({
+    status: 'ok',
+    db: rows[0].version,
+  });
 });
 
 app.get('/api/questions', async (_req, res) => {
   const { rows } = await db.query(
     'SELECT * FROM questions ORDER BY id DESC LIMIT 10',
   );
+
   res.json(rows);
 });
 
@@ -31,7 +40,9 @@ app.post('/api/questions', async (req, res) => {
   const question = String(req.body?.question ?? '').trim();
 
   if (!question) {
-    res.status(400).json({ error: 'Question manquante' });
+    res.status(400).json({
+      error: 'Question manquante',
+    });
     return;
   }
 
@@ -46,6 +57,12 @@ app.post('/api/questions', async (req, res) => {
 });
 
 async function ask(question: string): Promise<string> {
+  // Fallback temporaire pour sécuriser la tranche verticale m2.
+  // La simulation reste explicitement identifiable pendant la démo.
+  if (!AI_BASE_URL) {
+    return `[SIMULATION IA] Synthèse simulée pour la question : "${question}". La connexion au service Data/IA sera branchée ensuite.`;
+  }
+
   const response = await fetch(`${AI_BASE_URL}/chat/completions`, {
     method: 'POST',
     headers: {
@@ -66,4 +83,6 @@ async function ask(question: string): Promise<string> {
   return data.choices[0].message.content;
 }
 
-app.listen(PORT, () => console.log(`API sur http://localhost:${PORT}`));
+app.listen(PORT, () => {
+  console.log(`API sur http://localhost:${PORT}`);
+});
