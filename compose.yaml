@@ -5,9 +5,15 @@ services:
     build:
       context: .
       dockerfile: .devcontainer/Dockerfile
-    command: sleep infinity
+    command: npm run dev
+    working_dir: /workspace
+    env_file:
+      - .env
     volumes:
       - .:/workspace:cached
+    ports:
+      - '3000:3000'
+      - '5173:5173'
     extra_hosts:
       - host.docker.internal:host-gateway
     depends_on:
